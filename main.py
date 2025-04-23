@@ -10,9 +10,11 @@ def main():
     gaps = {
         "knuth": [29524, 9841, 3280, 1093, 364, 121, 40, 13, 4, 1],
         "second": [30341, 10111, 3371, 1123, 373, 149, 53, 17, 5, 1],
-        "third": [29160, 9720, 3240,1080, 360, 120, 60, 30, 10, 1,],
-        # "fourth": [],
+        "third": [29160, 9720, 3240, 1080, 360, 120, 60, 30, 10, 1,],
+        "sedgewick": [65921, 16577, 4193, 1073, 281, 77, 23, 8, 1],  # Sedgewick's Increments
     }
+
+    keys = list(gaps.keys())
 
     # Set current working directory. 
     current_working_directory = utils.set_working_directory()
@@ -30,8 +32,6 @@ def main():
 
     # Get list of input files. 
     input_filenames = utils.list_input_files(input_files_directory)
-    # input_filenames = glob.glob(f'{input_files_directory}/*')
-    # input_filenames.sort(key=str.lower)
 
     # Set up empty lists to append data and metadata to for timing analysis. 
     filenames = []
@@ -60,7 +60,7 @@ def main():
             
             # Collect elapsed time data and metadata for efficiency analysis. 
             filenames.append(filename)
-            sort_type.append(f'shell_{i}')
+            sort_type.append(f'shell_{keys[i]}')
             elapsed_times_s.append(shell_sort_elapsed_time_s)
             n_data.append(n)
             file_types.append(file_type)
@@ -81,11 +81,12 @@ def main():
     timing_data = utils.make_dataframe(filenames, sort_type, elapsed_times_s, n_data, file_types)
 
     # Write timing data DataFrame to output file. 
-    print(timing_data.to_string())
+    utils.format_timing_df(timing_data)
 
-    # Timing data analysis statistics. 
-    utils.time_stats(timing_data)
+    # Timing averages per n, order, and sort type. 
+    utils.get_stats(timing_data)
 
+    # Close output file. 
     o.close()
 
     print(data)

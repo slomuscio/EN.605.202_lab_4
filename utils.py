@@ -1,8 +1,11 @@
 import os 
+import sys
 import random
 import numpy as np
 import glob
 import pandas as pd
+
+np.set_printoptions(threshold=sys.maxsize)
 
 def set_working_directory() -> str:
     """Sets the working directory to be the root of this repo. 
@@ -134,106 +137,159 @@ def make_dataframe(filenames:list, sort_type:list, elapsed_times_s:list, n_data:
     return timing_data
 
 
-def time_stats(timing_data:dict):
-    """
-    - Stats per file
-        - Which was fastest 
-        - Average
-    - Stats per file_type 
-    - Stats per file length 
-    """
-    # Per file 
-    def per_file(timing_data, filename):
-        # Extract timing and meta data for a specific file. 
-        file_data = timing_data[timing_data.filenames == filename]
+def format_timing_df(timing_data:pd.DataFrame):
+    print("\n\n================ Timing Data ====================================")
+    print(timing_data.to_string())
+    print("=========================================================================\n")
 
-        # Get shell sort and heap sort timing info. 
-        average_shell_sort = file_data[file_data['sort_type'].str.contains('shell')].elapsed_time_s.mean()
-        heap_sort = file_data[file_data['sort_type'] == 'heap'].elapsed_time_s
 
-        # Get ratio of heap sort to average of all shell sorts.
-        ratio_heap_to_shell = heap_sort / average_shell_sort
+def get_stats(timing_data:pd.DataFrame):
+    print("\n\n================ Stats Across All Files ====================================")
+    # Overall stats by gap 
+    knuth_shell = timing_data[timing_data.sort_type == 'shell_knuth']
+    second_shell = timing_data[timing_data.sort_type == 'shell_second']
+    third_shell = timing_data[timing_data.sort_type == 'shell_third']
+    sedgewich_shell = timing_data[timing_data.sort_type == 'shell_sedgewick']
+    heap = timing_data[timing_data.sort_type == 'heap']
+    # Mean across all n input 
+    knuth_mean = knuth_shell.elapsed_time_s.mean()
+    second_mean = second_shell.elapsed_time_s.mean()
+    third_mean = third_shell.elapsed_time_s.mean()
+    sedgewich_mean = sedgewich_shell.elapsed_time_s.mean()
+    heap_mean = heap.elapsed_time_s.mean()
 
-        # Get algos that took the longest and shortest times. 
-        max_elapsed_time = file_data[file_data.elapsed_time_s == file_data.elapsed_time_s.max()]
-        min_elapsed_time = file_data[file_data.elapsed_time_s == file_data.elapsed_time_s.min()] 
+    for sort_algo, mean_val in zip(['shell_knuth', 'shell_second', 'shell_third', 'shell_sedgewich', 'shell_heap'], [knuth_mean, second_mean, third_mean, sedgewich_mean, heap_mean]):
+        print(f"{sort_algo} mean: {mean_val} seconds.")
+    print("=========================================================================\n")
 
-        # Write these stats to the output file. 
-        print(f"\tAverage shell sort execution time: {average_shell_sort} seconds.")
-        print(f"\tHeap sort execution time: {heap_sort.to_string(index=False)} seconds.")
-        print(f"\n\tHeap sort takes {ratio_heap_to_shell.to_string(index=False)} times longer than shell sort.")
-        print(f"\n\t{min_elapsed_time.sort_type.to_string(index=False)} algorithm took the minimum time to run; {min_elapsed_time.elapsed_time_s.to_string(index=False)} seconds.")
-        print(f"\t{max_elapsed_time.sort_type.to_string(index=False)} algorithm took the maximum time to run; {max_elapsed_time.elapsed_time_s.to_string(index=False)} seconds.")
+    # Stats by n 
+    print("\n================ Stats by n  ====================================")
+    unique_n = sorted(timing_data.n.unique())
+    for n in unique_n: 
+        data_n = timing_data[timing_data.n == n]
+        print(f"n value = {n}.\n")
+        for sort_type in data_n.sort_type.unique(): 
+            data_n_sort_type = data_n[data_n.sort_type == sort_type]
+            print(f"{sort_type} mean: {data_n_sort_type.elapsed_time_s.mean()} seconds.")  # Prints the mean execution time for each sorting algorithm 
+        print("=========================================================================")
+    print("=========================================================================\n")
+
+    # Stats by data order 
+    print("\n================ Stats by data order  ====================================")
+    asc = timing_data[timing_data.file_type == 'asc']
+    dup = timing_data[timing_data.file_type == 'dup']
+    ran = timing_data[timing_data.file_type == 'ran']
+    rev = timing_data[timing_data.file_type == 'rev']
+    for data_order, order_label in zip([asc, dup, ran, rev], ['asc', 'dup', 'ran', 'rev']):
+        print(f"data order: {order_label}\n")
+        for sort_type in data_order.sort_type.unique(): 
+            data_order_sort_type = data_order[data_order.sort_type == sort_type]
+            print(f"{sort_type} mean: {data_order_sort_type.elapsed_time_s.mean()} seconds.")  # Prints the mean execution time for each sorting algorithm 
+        print("=========================================================================")
+    print("=========================================================================\n")
+
+
+# def time_stats(timing_data:dict):
+#     """
+#     - Stats per file
+#         - Which was fastest 
+#         - Average
+#     - Stats per file_type 
+#     - Stats per file length 
+#     """
+#     # Per file 
+#     def per_file(timing_data, filename):
+#         # Extract timing and meta data for a specific file. 
+#         file_data = timing_data[timing_data.filenames == filename]
+
+#         # Get shell sort and heap sort timing info. 
+#         average_shell_sort = file_data[file_data['sort_type'].str.contains('shell')].elapsed_time_s.mean()
+#         heap_sort = file_data[file_data['sort_type'] == 'heap'].elapsed_time_s
+
+#         # Get ratio of heap sort to average of all shell sorts.
+#         ratio_heap_to_shell = heap_sort / average_shell_sort
+
+#         # Get algos that took the longest and shortest times. 
+#         max_elapsed_time = file_data[file_data.elapsed_time_s == file_data.elapsed_time_s.max()]
+#         min_elapsed_time = file_data[file_data.elapsed_time_s == file_data.elapsed_time_s.min()] 
+
+#         # Write these stats to the output file. 
+#         print(f"\tAverage shell sort execution time: {average_shell_sort} seconds.")
+#         print(f"\tHeap sort execution time: {heap_sort.to_string(index=False)} seconds.")
+#         print(f"\n\tHeap sort takes {ratio_heap_to_shell.to_string(index=False)} times longer than shell sort.")
+#         print(f"\n\t{min_elapsed_time.sort_type.to_string(index=False)} algorithm took the minimum time to run; {min_elapsed_time.elapsed_time_s.to_string(index=False)} seconds.")
+#         print(f"\t{max_elapsed_time.sort_type.to_string(index=False)} algorithm took the maximum time to run; {max_elapsed_time.elapsed_time_s.to_string(index=False)} seconds.")
     
-    def per_type(timing_data, file_type):
-        # Extract timing and meta data for a file type (rev, asc, dup, ran). 
-        type_data = timing_data[timing_data.file_type == file_type]
+#     def per_type(timing_data, file_type):
+#         # Extract timing and meta data for a file type (rev, asc, dup, ran). 
+#         type_data = timing_data[timing_data.file_type == file_type]
         
-        # Get shell sort and heap sort timing info. 
-        average_shell_sort = type_data[type_data['sort_type'].str.contains('shell')].elapsed_time_s.mean()
-        average_heap_sort = type_data[type_data['sort_type'] == 'heap'].elapsed_time_s.mean()
+#         # Get shell sort and heap sort timing info. 
+#         average_shell_sort = type_data[type_data['sort_type'].str.contains('shell')].elapsed_time_s.mean()
+#         average_heap_sort = type_data[type_data['sort_type'] == 'heap'].elapsed_time_s.mean()
 
-        # Get ratio of heap sort to average of all shell sorts. 
-        ratio_heap_to_shell = average_heap_sort / average_shell_sort 
+#         # Get ratio of heap sort to average of all shell sorts. 
+#         ratio_heap_to_shell = average_heap_sort / average_shell_sort 
 
-        # Get algos that took the longest and shortest times. 
-        max_elapsed_time = type_data[type_data.elapsed_time_s == type_data.elapsed_time_s.max()]
-        min_elapsed_time = type_data[type_data.elapsed_time_s == type_data.elapsed_time_s.min()]
+#         # Get algos that took the longest and shortest times. 
+#         max_elapsed_time = type_data[type_data.elapsed_time_s == type_data.elapsed_time_s.max()]
+#         min_elapsed_time = type_data[type_data.elapsed_time_s == type_data.elapsed_time_s.min()]
 
-        # Write these stats to the output file. 
-        print(f"\tAverage shell sort execution time: {average_shell_sort} seconds.")
-        print(f"\tAverage heap sort execution time: {average_heap_sort} seconds.")
-        print(f"\n\tHeap sort takes {ratio_heap_to_shell} times longer than shell sort.")
-        print(f"\n\t{min_elapsed_time.sort_type.to_string(index=False)} algorithm took the minimum time to run; {min_elapsed_time.elapsed_time_s.to_string(index=False)} seconds.")
-        print(f"\t{max_elapsed_time.sort_type.to_string(index=False)} algorithm took the maximum time to run; {max_elapsed_time.elapsed_time_s.to_string(index=False)} seconds.")
-        # return max_elapsed_time, min_elapsed_time, average_shell_sort, ratio_heap_to_shell 
+#         # Write these stats to the output file. 
+#         print(f"\tAverage shell sort execution time: {average_shell_sort} seconds.")
+#         print(f"\tAverage heap sort execution time: {average_heap_sort} seconds.")
+#         print(f"\n\tHeap sort takes {ratio_heap_to_shell} times longer than shell sort.")
+#         print(f"\n\t{min_elapsed_time.sort_type.to_string(index=False)} algorithm took the minimum time to run; {min_elapsed_time.elapsed_time_s.to_string(index=False)} seconds.")
+#         print(f"\t{max_elapsed_time.sort_type.to_string(index=False)} algorithm took the maximum time to run; {max_elapsed_time.elapsed_time_s.to_string(index=False)} seconds.")
+#         # return max_elapsed_time, min_elapsed_time, average_shell_sort, ratio_heap_to_shell 
         
-    def per_n(timing_data, n):
-        # Extract timing and meta data for all files with same number of items to sort. 
-        n_data = timing_data[timing_data.n == n]
+#     def per_n(timing_data, n):
+#         # Extract timing and meta data for all files with same number of items to sort. 
+#         n_data = timing_data[timing_data.n == n]
 
-        # Get shell sort and heap sort timing info. 
-        average_shell_sort = n_data[n_data['sort_type'].str.contains('shell')].elapsed_time_s.mean()
-        average_heap_sort = n_data[n_data['sort_type'] == 'heap'].elapsed_time_s.mean()
+#         # Get shell sort and heap sort timing info. 
+#         average_shell_sort = n_data[n_data['sort_type'].str.contains('shell')].elapsed_time_s.mean()
+#         average_heap_sort = n_data[n_data['sort_type'] == 'heap'].elapsed_time_s.mean()
 
-        # Get ratio of heap sort to average of all shell sorts. 
-        ratio_heap_to_shell = average_heap_sort / average_shell_sort 
+#         # Get ratio of heap sort to average of all shell sorts. 
+#         ratio_heap_to_shell = average_heap_sort / average_shell_sort 
 
-        # Get algos that took the longest and shortest times. 
-        max_elapsed_time = n_data[n_data.elapsed_time_s == n_data.elapsed_time_s.max()].iloc[0]
-        min_elapsed_time = n_data[n_data.elapsed_time_s == n_data.elapsed_time_s.min()].iloc[0]
+#         # Get algos that took the longest and shortest times. 
+#         max_elapsed_time = n_data[n_data.elapsed_time_s == n_data.elapsed_time_s.max()].iloc[0]
+#         min_elapsed_time = n_data[n_data.elapsed_time_s == n_data.elapsed_time_s.min()].iloc[0]
 
-        # Write these stats to the output file. 
-        print(f"\tAverage shell sort execution time: {average_shell_sort} seconds.")
-        print(f"\tAverage heap sort execution time: {average_heap_sort} seconds.")
-        print(f"\n\tHeap sort takes {ratio_heap_to_shell} times longer than shell sort.")
-        print(f"\n\t{min_elapsed_time.sort_type} algorithm took the minimum time to run; {min_elapsed_time.elapsed_time_s} seconds.")
-        print(f"\t{max_elapsed_time.sort_type} algorithm took the maximum time to run; {max_elapsed_time.elapsed_time_s} seconds.")
-        # return max_elapsed_time, min_elapsed_time, average_shell_sort, ratio_heap_to_shell 
+#         # Write these stats to the output file. 
+#         print(f"\tAverage shell sort execution time: {average_shell_sort} seconds.")
+#         print(f"\tAverage heap sort execution time: {average_heap_sort} seconds.")
+#         print(f"\n\tHeap sort takes {ratio_heap_to_shell} times longer than shell sort.")
+#         print(f"\n\t{min_elapsed_time.sort_type} algorithm took the minimum time to run; {min_elapsed_time.elapsed_time_s} seconds.")
+#         print(f"\t{max_elapsed_time.sort_type} algorithm took the maximum time to run; {max_elapsed_time.elapsed_time_s} seconds.")
+#         # return max_elapsed_time, min_elapsed_time, average_shell_sort, ratio_heap_to_shell 
 
-    unique_filenames = timing_data.filenames.unique()  # Unique list of all filenames
-    unique_filetypes = timing_data.file_type.str.lower().unique()  # Unique list of all file types (asc, dup, ran, rev)
-    unique_filetypes.sort()
-    unique_n = timing_data.n.unique()  # Unique list of all n
-    unique_n.sort()
+#     unique_filenames = timing_data.filenames.unique()  # Unique list of all filenames
+#     unique_filetypes = timing_data.file_type.str.lower().unique()  # Unique list of all file types (asc, dup, ran, rev)
+#     unique_filetypes.sort()
+#     unique_n = timing_data.n.unique()  # Unique list of all n
+#     unique_n.sort()
 
-    print("\n\n========================== STATISTICS PER FILE ==========================")
-    for fname in unique_filenames:
-        print(f"\t------- {fname} ------------------------------------------")
-        per_file(timing_data, fname)
-        print(f"\t------------------------------------------------------------\n")
-    print("=========================================================================\n")
+#     print("\n\n========================== STATISTICS PER FILE ==========================")
+#     for fname in unique_filenames:
+#         print(f"\t------- {fname} ------------------------------------------")
+#         per_file(timing_data, fname)
+#         print(f"\t------------------------------------------------------------\n")
+#     print("=========================================================================\n")
 
-    print("\n\n========================== STATISTICS PER TYPE ==========================")
-    for ftype in unique_filetypes:
-        print(f"\t------- {ftype} ------------------------------------------")
-        per_type(timing_data, ftype)
-        print(f"\t------------------------------------------------------------\n")
-    print("=========================================================================\n")
+#     print("\n\n========================== STATISTICS PER TYPE ==========================")
+#     for ftype in unique_filetypes:
+#         print(f"\t------- {ftype} ------------------------------------------")
+#         per_type(timing_data, ftype)
+#         print(f"\t------------------------------------------------------------\n")
+#     print("=========================================================================\n")
 
-    print("\n\n========================== STATISTICS PER n ==========================")
-    for f_n in unique_n:
-        print(f"\t------- n = {f_n} ------------------------------------------")
-        per_n(timing_data, f_n)
-        print(f"\t------------------------------------------------------------\n")
-    print("=========================================================================\n")
+#     print("\n\n========================== STATISTICS PER n ==========================")
+#     for f_n in unique_n:
+#         print(f"\t------- n = {f_n} ------------------------------------------")
+#         per_n(timing_data, f_n)
+#         print(f"\t------------------------------------------------------------\n")
+#     print("=========================================================================\n")
+
