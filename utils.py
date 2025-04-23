@@ -209,3 +209,12 @@ def get_stats(timing_data:pd.DataFrame):
             print(f"{sort_type} mean: {data_order_sort_type.elapsed_time_s.mean()} seconds.")  # Prints the mean execution time for each sorting algorithm 
         print("=========================================================================")
     print("=========================================================================\n")
+
+
+def log_error(e):
+    """Logs error to output file. 
+
+    Args:
+        e (Exception): Exception to be logged. 
+    """
+    print(f"\tERROR:\n\t\t{e}")

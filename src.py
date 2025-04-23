@@ -14,6 +14,9 @@ def shell_sort(data:np.ndarray, gap_values:list) -> Tuple[np.ndarray, float]:
     """
     # Get number of items to sort. 
     n = len(data)
+
+    if n == 0:
+        raise Exception("Error. No data to sort.")  # Error checking
     
     # Start time for timing metrics. 
     start_time = time.time()
@@ -87,6 +90,9 @@ def heap_sort(data:np.ndarray) -> Tuple[np.ndarray, float]:
     """
     # Start time for timing metrics. 
     start_time = time.time()
+
+    if len(data) == 0:
+        raise Exception("Error. No data to sort.")
 
     # Build max heap from input data array. 
     heap = build_max_heap(data)

@@ -55,7 +55,11 @@ def main():
         # Shell Sort 
         print("SHELL SORT")
         for i, gap_values in enumerate(gaps.values()):
-            shell_sort_output, shell_sort_elapsed_time_s = src.shell_sort(data, gap_values)
+            try:
+                shell_sort_output, shell_sort_elapsed_time_s = src.shell_sort(data, gap_values)
+            except Exception as e:
+                utils.log_error(e)
+
             utils.format_shell_sort_output(f"./input/{filename}", gap_values, shell_sort_output, shell_sort_elapsed_time_s)  # Write to output file.
             
             # Collect elapsed time data and metadata for efficiency analysis. 
@@ -68,7 +72,10 @@ def main():
         # Heap Sort 
         print("HEAP SORT")
         heap_sort_output, heap_sort_elapsed_time_s = src.heap_sort(data)
-        utils.format_heap_sort_output(f"./input/{filename}", heap_sort_output, heap_sort_elapsed_time_s)
+        try:
+            utils.format_heap_sort_output(f"./input/{filename}", heap_sort_output, heap_sort_elapsed_time_s)
+        except Exception as e:
+                utils.log_error(e)
 
         # Collect elapsed time data. 
         filenames.append(filename)
@@ -88,8 +95,6 @@ def main():
 
     # Close output file. 
     o.close()
-
-    print(data)
 
 
 if __name__=="__main__":
